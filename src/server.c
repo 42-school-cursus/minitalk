@@ -6,19 +6,19 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/20 20:08:56 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/21 17:07:15 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <signal.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <ft_string.h>
 #include <ft_stdio.h>
 #include <stdlib.h>
 #include <ft_math.h>
 
 char	*g_binary_str;
+
+//proteger malloc
 
 static char	*btoa(char *str)
 {
@@ -49,6 +49,23 @@ static char	*btoa(char *str)
 	return (a_str);
 }
 
+void	*ft_realloc(void *ptr, size_t old_size,
+		size_t new_size)
+{
+	void	*new_ptr;
+
+	if (new_size == old_size)
+		return (ptr);
+	new_ptr = malloc(new_size);
+	if (!new_ptr)
+		return (NULL);
+	ft_memcpy(new_ptr, ptr, old_size);
+	free(ptr);
+	ptr = new_ptr;
+	return (ptr);
+}
+
+
 static void	handle_binary_1(int sig, siginfo_t *info, void *context)
 {
 	(void) sig;
@@ -60,8 +77,9 @@ static void	handle_binary_1(int sig, siginfo_t *info, void *context)
 	}
 	else
 	{
-		g_binary_str = realloc(g_binary_str,
-				ft_strlen(g_binary_str) + 2 * sizeof(char));
+		size_t len1 = ft_strlen(g_binary_str) + 1 * sizeof(char);
+		size_t len2 = ft_strlen(g_binary_str) + 2 * sizeof(char);
+		g_binary_str = ft_realloc((void *) g_binary_str, len1, len2);
 	}
 	ft_strcat(g_binary_str, "1");
 	kill(info->si_pid, SIGUSR1);
@@ -79,8 +97,11 @@ static void	handle_binary_0(int sig, siginfo_t *info, void *context)
 		g_binary_str[0] = '\0';
 	}
 	else
-		g_binary_str = realloc(g_binary_str,
-				ft_strlen(g_binary_str) + 2 * sizeof(char));
+	{
+		size_t len1 = ft_strlen(g_binary_str) + 1 * sizeof(char);
+		size_t len2 = ft_strlen(g_binary_str) + 2 * sizeof(char);
+		g_binary_str = ft_realloc((void *) g_binary_str, len1, len2);
+	}
 	ft_strcat(g_binary_str, "0");
 	if (ft_strlen(g_binary_str) >= 8
 		&& !ft_strcmp(g_binary_str + ft_strlen(g_binary_str) - 8, "00000000")
