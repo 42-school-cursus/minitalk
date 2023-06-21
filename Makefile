@@ -6,7 +6,7 @@
 #    By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/06/20 17:34:18 by kjimenez          #+#    #+#              #
-#    Updated: 2023/06/20 18:25:56 by kjimenez         ###   ########.fr        #
+#    Updated: 2023/06/21 17:46:53 by kjimenez         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,9 +25,9 @@ LIBS_PATH			:= libs
 LIBFT_PATH			:= $(LIBS_PATH)/libft
 
 CC					:= clang
-CFLAGS				:= -Wall -Wextra -Werror -I$(LIBFT_PATH)/include -Iinclude
-CLIENT_LDFLAGS		:= -L$(LIBFT_PATH)/bin -lft_stdio -lft_string -lft_stdlib
-SERVER_LDFLAGS		:= -L$(LIBFT_PATH)/bin -lft_stdio -lft_string -lft_math
+CFLAGS				:= -Wall -Wextra -Werror -I$(LIBFT_PATH)/include -Iinclude -g
+CLIENT_LDFLAGS		:= -L$(LIBFT_PATH)/bin -lft_stdio -lft_stdlib -lft_string
+SERVER_LDFLAGS		:= -L$(LIBFT_PATH)/bin -lft_stdio -lft_math -lft_stdlib -lft_string
 
 GIT					:= git
 

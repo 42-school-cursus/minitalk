@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/21 17:07:15 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/21 18:28:35 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,7 @@
 #include <ft_stdio.h>
 #include <stdlib.h>
 #include <ft_math.h>
-
-char	*g_binary_str;
+#include <ft_stdlib.h>
 
 //proteger malloc
 
@@ -29,6 +28,8 @@ static char	*btoa(char *str)
 	int					dec;
 
 	a_str = malloc((ft_strlen(str) / 8) * sizeof(char));
+	if (!a_str)
+		return (NULL);
 	a_str[0] = '\0';
 	substr_start = 0;
 	while (substr_start < ft_strlen(str))
@@ -49,71 +50,46 @@ static char	*btoa(char *str)
 	return (a_str);
 }
 
-void	*ft_realloc(void *ptr, size_t old_size,
-		size_t new_size)
+static void	print_and_flush_str(pid_t pid, char **binary_str)
 {
-	void	*new_ptr;
+	char		*a_str;
 
-	if (new_size == old_size)
-		return (ptr);
-	new_ptr = malloc(new_size);
-	if (!new_ptr)
-		return (NULL);
-	ft_memcpy(new_ptr, ptr, old_size);
-	free(ptr);
-	ptr = new_ptr;
-	return (ptr);
+	if (ft_strlen(*binary_str) < 8
+		|| ft_strcmp(*binary_str + ft_strlen(*binary_str) - 8, "00000000")
+		|| ft_strlen(*binary_str) % 8 == 1)
+		return ;
+
+	a_str = btoa(*binary_str);
+	ft_printf("%s", a_str);
+	free(a_str);
+	free(*binary_str);
+	*binary_str = NULL;
+	kill(pid, SIGUSR2);
 }
 
-
-static void	handle_binary_1(int sig, siginfo_t *info, void *context)
+static void	append_binary(int sig, siginfo_t *info, void *context)
 {
-	(void) sig;
-	(void) context;
-	if (g_binary_str == NULL)
-	{
-		g_binary_str = malloc(2 * sizeof(char));
-		g_binary_str[0] = '\0';
-	}
-	else
-	{
-		size_t len1 = ft_strlen(g_binary_str) + 1 * sizeof(char);
-		size_t len2 = ft_strlen(g_binary_str) + 2 * sizeof(char);
-		g_binary_str = ft_realloc((void *) g_binary_str, len1, len2);
-	}
-	ft_strcat(g_binary_str, "1");
-	kill(info->si_pid, SIGUSR1);
-}
-
-static void	handle_binary_0(int sig, siginfo_t *info, void *context)
-{
-	char	*a_str;
+	static char	*binary_str;
 
 	(void) sig;
 	(void) context;
-	if (g_binary_str == NULL)
+	if (binary_str == NULL)
 	{
-		g_binary_str = malloc(2 * sizeof(char));
-		g_binary_str[0] = '\0';
+		binary_str = malloc(2 * sizeof(char));
+		binary_str[0] = '\0';
 	}
 	else
 	{
-		size_t len1 = ft_strlen(g_binary_str) + 1 * sizeof(char);
-		size_t len2 = ft_strlen(g_binary_str) + 2 * sizeof(char);
-		g_binary_str = ft_realloc((void *) g_binary_str, len1, len2);
+		size_t len1 = ft_strlen(binary_str) + 1 * sizeof(char);
+		size_t len2 = ft_strlen(binary_str) + 2 * sizeof(char);
+		ft_printf("Old size: %d New size : %d\n", len1, len2);
+		binary_str = ft_realloc((void *) binary_str, len1, len2);
 	}
-	ft_strcat(g_binary_str, "0");
-	if (ft_strlen(g_binary_str) >= 8
-		&& !ft_strcmp(g_binary_str + ft_strlen(g_binary_str) - 8, "00000000")
-		&& ft_strlen(g_binary_str) % 8 == 0)
-	{
-		a_str = btoa(g_binary_str);
-		ft_printf("Message received from client: %s\n", a_str);
-		free(a_str);
-		free(g_binary_str);
-		g_binary_str = NULL;
-		kill(info->si_pid, SIGUSR2);
-	}
+	if (sig == SIGUSR1)
+		ft_strcat(binary_str, "1");
+	else
+		ft_strcat(binary_str, "0");
+	print_and_flush_str(info->si_pid, &binary_str);
 	kill(info->si_pid, SIGUSR1);
 }
 
@@ -122,11 +98,11 @@ int	main(void)
 	struct sigaction	binary1_sig;
 	struct sigaction	binary0_sig;
 
-	binary1_sig.sa_handler = (void *) handle_binary_1;
+	binary1_sig.sa_handler = (void *) append_binary;
 	binary1_sig.sa_flags = SA_SIGINFO;
 	sigemptyset(&binary1_sig.sa_mask);
 	sigaction(SIGUSR1, &binary1_sig, NULL);
-	binary0_sig.sa_handler = (void *) handle_binary_0;
+	binary0_sig.sa_handler = (void *) append_binary;
 	binary0_sig.sa_flags = SA_SIGINFO;
 	sigemptyset(&binary0_sig.sa_mask);
 	sigaction(SIGUSR2, &binary0_sig, NULL);
