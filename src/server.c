@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/21 18:28:35 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/21 20:03:05 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <ft_stdlib.h>
 
 //proteger malloc
+//relink makefile
 
 static char	*btoa(char *str)
 {
@@ -27,7 +28,7 @@ static char	*btoa(char *str)
 	int					i;
 	int					dec;
 
-	a_str = malloc((ft_strlen(str) / 8) * sizeof(char));
+	a_str = malloc((ft_strlen(str) / 8) + 1);
 	if (!a_str)
 		return (NULL);
 	a_str[0] = '\0';
@@ -50,47 +51,48 @@ static char	*btoa(char *str)
 	return (a_str);
 }
 
-static void	print_and_flush_str(pid_t pid, char **binary_str)
+static void	print_and_flush_str(pid_t pid, char **binary_str, int *count)
 {
 	char		*a_str;
 
 	if (ft_strlen(*binary_str) < 8
 		|| ft_strcmp(*binary_str + ft_strlen(*binary_str) - 8, "00000000")
-		|| ft_strlen(*binary_str) % 8 == 1)
+		|| !(ft_strlen(*binary_str) % 8 == 0))
 		return ;
-
 	a_str = btoa(*binary_str);
 	ft_printf("%s", a_str);
 	free(a_str);
 	free(*binary_str);
 	*binary_str = NULL;
+	*count = 0;
 	kill(pid, SIGUSR2);
 }
 
 static void	append_binary(int sig, siginfo_t *info, void *context)
 {
 	static char	*binary_str;
+	static int	count;
 
 	(void) sig;
 	(void) context;
 	if (binary_str == NULL)
 	{
-		binary_str = malloc(2 * sizeof(char));
+		binary_str = malloc(9 * sizeof(char));
 		binary_str[0] = '\0';
 	}
-	else
+	else if (count % 8 == 0)
 	{
-		size_t len1 = ft_strlen(binary_str) + 1 * sizeof(char);
-		size_t len2 = ft_strlen(binary_str) + 2 * sizeof(char);
-		ft_printf("Old size: %d New size : %d\n", len1, len2);
-		binary_str = ft_realloc((void *) binary_str, len1, len2);
+		size_t len2 = ft_strlen(binary_str) + 9;
+		//ft_printf("New size : %d\n", len2);
+		binary_str = realloc(binary_str, len2);
 	}
 	if (sig == SIGUSR1)
 		ft_strcat(binary_str, "1");
 	else
 		ft_strcat(binary_str, "0");
-	print_and_flush_str(info->si_pid, &binary_str);
+	print_and_flush_str(info->si_pid, &binary_str, &count);
 	kill(info->si_pid, SIGUSR1);
+	count++;
 }
 
 int	main(void)
