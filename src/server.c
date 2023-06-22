@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/21 20:03:05 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/22 22:49:15 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,7 @@ static char	*btoa(char *str)
 
 static void	print_and_flush_str(pid_t pid, char **binary_str, int *count)
 {
+	(void) pid;
 	char		*a_str;
 
 	if (ft_strlen(*binary_str) < 8
@@ -65,7 +66,21 @@ static void	print_and_flush_str(pid_t pid, char **binary_str, int *count)
 	free(*binary_str);
 	*binary_str = NULL;
 	*count = 0;
-	kill(pid, SIGUSR2);
+	//kill(pid, SIGUSR2);
+}
+
+void	*ft_realloc2(void *ptr, size_t old_size, size_t new_size)
+{
+	void	*new_ptr;
+
+	if (!ptr)
+		return (NULL);
+	new_ptr = malloc(new_size);
+	if (!new_ptr)
+		return (NULL);
+	ft_memcpy(new_ptr, ptr, old_size);
+	free(ptr);
+	return (new_ptr);
 }
 
 static void	append_binary(int sig, siginfo_t *info, void *context)
@@ -77,14 +92,14 @@ static void	append_binary(int sig, siginfo_t *info, void *context)
 	(void) context;
 	if (binary_str == NULL)
 	{
-		binary_str = malloc(9 * sizeof(char));
+		binary_str = malloc(9);
 		binary_str[0] = '\0';
 	}
 	else if (count % 8 == 0)
 	{
-		size_t len2 = ft_strlen(binary_str) + 9;
-		//ft_printf("New size : %d\n", len2);
-		binary_str = realloc(binary_str, len2);
+		size_t len = ft_strlen(binary_str);
+		binary_str = ft_realloc2(binary_str, len + 1,
+			len + 9);
 	}
 	if (sig == SIGUSR1)
 		ft_strcat(binary_str, "1");
@@ -110,5 +125,5 @@ int	main(void)
 	sigaction(SIGUSR2, &binary0_sig, NULL);
 	ft_printf("Server PID is : %d\n", getpid());
 	while (1)
-		;
+		pause();
 }

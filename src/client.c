@@ -6,40 +6,66 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 17:11:38 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/20 18:16:46 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/22 20:49:40 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <signal.h>
 #include "ft_stdio.h"
 #include "ft_stdlib.h"
+#include "ft_string.h"
 
-static void	interrupt_sleep(int sig)
+int	send_null(int pid)
 {
-	(void) sig;
-}
+	static int	i = 0;
 
-static void	notify_message_received(int sig)
-{
-	(void) sig;
-	ft_printf("Server successfully received message from client\n");
-	exit(0);
-}
-
-static void	send_termination_to_server(int server_pid)
-{
-	int	i;
-
-	i = 0;
-	while (i < 8)
+	if (i++ != 8)
 	{
-		kill(server_pid, SIGUSR2);
-		usleep(100);
-		i++;
+		kill(pid, SIGUSR2);
+		return (0);
 	}
+	return (1);
 }
 
-static void	send_message_to_server(int server_pid, char *str)
+static int	send_bit(int server_pid, char *str)
+{
+	static char	*message = 0;
+	static int	bits = -1;
+
+	if (str)
+		message = ft_strdup(str);
+	if (message[++bits / 8])
+	{
+		if (message[bits / 8] & (0x80 >> (bits % 8)))
+			kill(server_pid, SIGUSR1);
+		else
+			kill(server_pid, SIGUSR2);
+		return (0);
+	}
+	if (!send_null(server_pid))
+		return (0);
+	free(message);
+	return (1);
+}
+
+
+static void	interrupt_sleep(int sig, siginfo_t *info, void *context)
+{
+	int	end;
+
+	(void) sig;
+	(void) context;
+
+	end = send_bit(info->si_pid, 0);
+
+	if (!end)
+		return ;
+
+	ft_printf("Server successfully received message from client\n");
+	exit(EXIT_SUCCESS);
+}
+
+/*static void	send_message_to_server(int server_pid, char *str)
 {
 	int	i;
 	int	j;
@@ -54,20 +80,18 @@ static void	send_message_to_server(int server_pid, char *str)
 				kill(server_pid, SIGUSR1);
 			else
 				kill(server_pid, SIGUSR2);
-			usleep(100);
 			j++;
 		}
 		i++;
 	}
 	send_termination_to_server(server_pid);
-}
+}*/
 
-int	main(int argc, char *argv[])
+int	main(int argc, char **argv)
 {
 	int					server_pid;
 	char				*message;
 	struct sigaction	allow_signals_sig;
-	struct sigaction	notify_message_received_sig;
 
 	if (argc < 3)
 	{
@@ -77,16 +101,13 @@ int	main(int argc, char *argv[])
 	}
 	server_pid = ft_atoi(argv[1]);
 	message = argv[2];
-	allow_signals_sig.sa_handler = interrupt_sleep;
-	allow_signals_sig.sa_flags = 0;
+	allow_signals_sig.sa_handler = (void *) interrupt_sleep;
+	allow_signals_sig.sa_flags = SA_SIGINFO;
 	sigemptyset(&allow_signals_sig.sa_mask);
 	sigaction(SIGUSR1, &allow_signals_sig, NULL);
-	notify_message_received_sig.sa_handler = notify_message_received;
-	notify_message_received_sig.sa_flags = 0;
-	sigemptyset(&notify_message_received_sig.sa_mask);
-	sigaction(SIGUSR2, &notify_message_received_sig, NULL);
-	send_message_to_server(server_pid, message);
+
+	send_bit(server_pid, message);
 	while (1)
-		;
+		pause();
 	return (0);
 }
