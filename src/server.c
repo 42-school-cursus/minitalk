@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/22 22:56:56 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/23 00:45:41 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,80 +20,97 @@
 //proteger malloc
 //relink makefile
 
-static char	*btoa(char *str)
+char	*ft_straddc_first(char c)
 {
-	char				*a_str;
-	unsigned long		substr_start;
-	char				*octect;
-	int					i;
-	int					dec;
+	char	*add;
 
-	a_str = malloc((ft_strlen(str) / 8) + 1);
-	if (!a_str)
+	add = (char *)malloc(sizeof(char) * 2);
+	if (!add)
 		return (NULL);
-	a_str[0] = '\0';
-	substr_start = 0;
-	while (substr_start < ft_strlen(str))
+	add[0] = c;
+	add[1] = '\0';
+	return (add);
+}
+
+char	*ft_straddc(char *str, char c)
+{
+	char	*add;
+	int		i;
+
+	if (!c)
+		return (NULL);
+	if (!str)
+		return (ft_straddc_first(c));
+	add = (char *)malloc(sizeof(char) * (ft_strlen(str) + 2));
+	if (!add)
 	{
-		octect = ft_substr(str, substr_start, 8);
-		dec = 0;
-		i = 0;
-		while (i < 8)
-		{
-			if (octect[i] == '1')
-				dec += 1 * ft_pow(2, 8 - 1 - i);
-			i++;
-		}
-		ft_strcat(a_str, (char *) &dec);
-		substr_start += 8;
-		free(octect);
+		free(str);
+		return (NULL);
 	}
-	return (a_str);
+	i = -1;
+	while (str[++i])
+		add[i] = str[i];
+	free(str);
+	add[i++] = c;
+	add[i] = '\0';
+	return (add);
 }
 
-static void	print_and_flush_str(pid_t pid, char **binary_str, int *count)
+static void	print_message(char **message)
 {
-	(void) pid;
-	char		*a_str;
-
-	if (ft_strlen(*binary_str) < 8
-		|| ft_strcmp(*binary_str + ft_strlen(*binary_str) - 8, "00000000")
-		|| !(ft_strlen(*binary_str) % 8 == 0))
-		return ;
-	a_str = btoa(*binary_str);
-	ft_printf("%s", a_str);
-	free(a_str);
-	free(*binary_str);
-	*binary_str = NULL;
-	*count = 0;
-	//kill(pid, SIGUSR2);
+	ft_printf("Message received from client : %s\n", *message);
+	free(*message);
+	*message = NULL;
 }
 
-static void	append_binary(int sig, siginfo_t *info, void *context)
+void	*ft_realloc2(void **ptr, size_t old_size, size_t new_size)
 {
-	static char	*binary_str;
-	static int	count;
+	void	*new_ptr;
 
-	(void) sig;
+	if (!*ptr)
+		return (NULL);
+	new_ptr = malloc(new_size);
+	if (!new_ptr)
+		return (NULL);
+	ft_memcpy(new_ptr, *ptr, old_size);
+	free(*ptr);
+	*ptr = new_ptr;
+	return (*ptr);
+}
+
+
+static void	handle_binary(int sig, siginfo_t *info, void *context)
+{
+	static char	c = (char) 255;
+	static int	bits;
+	static char	*a_str;
+
 	(void) context;
-	if (binary_str == NULL)
-	{
-		binary_str = malloc(9);
-		binary_str[0] = '\0';
-	}
-	else if (count % 8 == 0)
-	{
-		size_t len = ft_strlen(binary_str);
-		binary_str = ft_realloc(binary_str, len + 1,
-			len + 9);
-	}
 	if (sig == SIGUSR1)
-		ft_strcat(binary_str, "1");
-	else
-		ft_strcat(binary_str, "0");
-	print_and_flush_str(info->si_pid, &binary_str, &count);
+		c |= 0x80 >> bits;
+	else if (sig == SIGUSR2)
+		c ^= 0x80 >> bits;
+	bits++;
+	if (bits == 8)
+	{
+		if (c == '\0')
+			print_message(&a_str);
+		else
+		{
+			if (a_str == NULL)
+			{
+				a_str = malloc(2);
+				a_str[0] = '\0';
+			}
+			else
+				a_str = ft_realloc2((void **) &a_str, ft_strlen(a_str) + 1, ft_strlen(a_str) + 2);
+			ft_strcat(a_str, &c);
+			ft_printf("New version\n");
+		}
+		bits = 0;
+		c = (char) 255;
+	}
 	kill(info->si_pid, SIGUSR1);
-	count++;
 }
 
 int	main(void)
@@ -101,11 +118,11 @@ int	main(void)
 	struct sigaction	binary1_sig;
 	struct sigaction	binary0_sig;
 
-	binary1_sig.sa_handler = (void *) append_binary;
+	binary1_sig.sa_handler = (void *) handle_binary;
 	binary1_sig.sa_flags = SA_SIGINFO;
 	sigemptyset(&binary1_sig.sa_mask);
 	sigaction(SIGUSR1, &binary1_sig, NULL);
-	binary0_sig.sa_handler = (void *) append_binary;
+	binary0_sig.sa_handler = (void *) handle_binary;
 	binary0_sig.sa_flags = SA_SIGINFO;
 	sigemptyset(&binary0_sig.sa_mask);
 	sigaction(SIGUSR2, &binary0_sig, NULL);
