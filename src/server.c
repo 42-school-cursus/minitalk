@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/23 01:05:42 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/23 01:06:50 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,9 +61,7 @@ static void	handle_binary(int sig, siginfo_t *info, void *context)
 		if (c == '\0')
 			print_message(&a_str);
 		else
-		{
 			append_char(&a_str, c);
-		}
 		bits = 0;
 		c = (char) 255;
 	}
