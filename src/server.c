@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/23 00:45:41 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/23 00:51:21 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,22 +63,6 @@ static void	print_message(char **message)
 	*message = NULL;
 }
 
-void	*ft_realloc2(void **ptr, size_t old_size, size_t new_size)
-{
-	void	*new_ptr;
-
-	if (!*ptr)
-		return (NULL);
-	new_ptr = malloc(new_size);
-	if (!new_ptr)
-		return (NULL);
-	ft_memcpy(new_ptr, *ptr, old_size);
-	free(*ptr);
-	*ptr = new_ptr;
-	return (*ptr);
-}
-
-
 static void	handle_binary(int sig, siginfo_t *info, void *context)
 {
 	static char	c = (char) 255;
@@ -103,7 +87,7 @@ static void	handle_binary(int sig, siginfo_t *info, void *context)
 				a_str[0] = '\0';
 			}
 			else
-				a_str = ft_realloc2((void **) &a_str, ft_strlen(a_str) + 1, ft_strlen(a_str) + 2);
+				a_str = ft_realloc((void **) &a_str, ft_strlen(a_str) + 1, ft_strlen(a_str) + 2);
 			ft_strcat(a_str, &c);
 			ft_printf("New version\n");
 		}
