@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/22 22:49:15 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/22 22:56:56 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,20 +69,6 @@ static void	print_and_flush_str(pid_t pid, char **binary_str, int *count)
 	//kill(pid, SIGUSR2);
 }
 
-void	*ft_realloc2(void *ptr, size_t old_size, size_t new_size)
-{
-	void	*new_ptr;
-
-	if (!ptr)
-		return (NULL);
-	new_ptr = malloc(new_size);
-	if (!new_ptr)
-		return (NULL);
-	ft_memcpy(new_ptr, ptr, old_size);
-	free(ptr);
-	return (new_ptr);
-}
-
 static void	append_binary(int sig, siginfo_t *info, void *context)
 {
 	static char	*binary_str;
@@ -98,7 +84,7 @@ static void	append_binary(int sig, siginfo_t *info, void *context)
 	else if (count % 8 == 0)
 	{
 		size_t len = ft_strlen(binary_str);
-		binary_str = ft_realloc2(binary_str, len + 1,
+		binary_str = ft_realloc(binary_str, len + 1,
 			len + 9);
 	}
 	if (sig == SIGUSR1)
