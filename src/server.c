@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/23 01:06:50 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/23 01:10:00 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <ft_math.h>
 #include <ft_stdlib.h>
+#include <limits.h>
 
 //proteger malloc
 //relink makefile
@@ -46,9 +47,9 @@ static void	print_message(char **str)
 
 static void	handle_binary(int sig, siginfo_t *info, void *context)
 {
-	static char	c = (char) 255;
-	static int	bits;
-	static char	*a_str;
+	static unsigned char	c = UCHAR_MAX;
+	static int				bits;
+	static char				*a_str;
 
 	(void) context;
 	if (sig == SIGUSR1)
@@ -63,7 +64,7 @@ static void	handle_binary(int sig, siginfo_t *info, void *context)
 		else
 			append_char(&a_str, c);
 		bits = 0;
-		c = (char) 255;
+		c = UCHAR_MAX;
 	}
 	kill(info->si_pid, SIGUSR1);
 }
