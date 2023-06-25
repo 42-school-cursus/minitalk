@@ -6,7 +6,7 @@
 #    By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/06/20 17:34:18 by kjimenez          #+#    #+#              #
-#    Updated: 2023/06/25 19:40:41 by kjimenez         ###   ########.fr        #
+#    Updated: 2023/06/25 19:45:14 by kjimenez         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -38,6 +38,8 @@ UPDATE_SUB			:= $(shell $(GIT) submodule update)
 BUILD_LIBFT			:= $(shell $(MAKE) -C $(LIBFT_PATH))
 
 all: client server
+
+bonus: all
 
 client: $(CLIENT_NAME)
 
