@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 17:11:38 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/22 20:49:40 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/25 19:41:01 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,39 +15,69 @@
 #include "ft_stdlib.h"
 #include "ft_string.h"
 
-int	send_null(int pid)
+int	send_null_terminator(int pid)
 {
-	static int	i = 0;
+	static int	i;
 
-	if (i++ != 8)
-	{
-		kill(pid, SIGUSR2);
-		return (0);
-	}
-	return (1);
+	if (i == 8)
+		return (1);
+	kill(pid, SIGUSR2);
+	i++;
+	return (0);
 }
 
-static int	send_bit(int server_pid, char *str)
+char	*str_to_binary(char *str)
 {
-	static char	*message = 0;
-	static int	bits = -1;
+	char	*binary_str;
+	int		i;
+	int		j;
 
-	if (str)
-		message = ft_strdup(str);
-	if (message[++bits / 8])
+	i = 0;
+	binary_str = malloc((ft_strlen(str) * 8) + 1);
+	if (!binary_str)
+		return (NULL);
+	binary_str[ft_strlen(str) * 8] = '\0';
+	while (str[i])
 	{
-		if (message[bits / 8] & (0x80 >> (bits % 8)))
+		j = 7;
+		while (j >= 0)
+		{
+			if (str[i] & (1 << j))
+				binary_str[(i * 8) + (7 - j)] = '1';
+			else
+				binary_str[(i * 8) + (7 - j)] = '0';
+			j--;
+		}
+		i++;
+	}
+	return (binary_str);
+}
+
+static int	send_next_bit(int server_pid, char *str)
+{
+	static char		*binary_str;
+	static size_t	binary_str_len;
+	static size_t	bits = -1;
+
+	if (!binary_str)
+	{
+		binary_str = str_to_binary(str);
+		binary_str_len = ft_strlen(binary_str);
+	}
+	bits++;
+	if (bits < binary_str_len)
+	{
+		if (binary_str[bits] == '1')
 			kill(server_pid, SIGUSR1);
 		else
 			kill(server_pid, SIGUSR2);
 		return (0);
 	}
-	if (!send_null(server_pid))
+	if (!send_null_terminator(server_pid))
 		return (0);
-	free(message);
+	free(binary_str);
 	return (1);
 }
-
 
 static void	interrupt_sleep(int sig, siginfo_t *info, void *context)
 {
@@ -55,37 +85,12 @@ static void	interrupt_sleep(int sig, siginfo_t *info, void *context)
 
 	(void) sig;
 	(void) context;
-
-	end = send_bit(info->si_pid, 0);
-
+	end = send_next_bit(info->si_pid, 0);
 	if (!end)
 		return ;
-
 	ft_printf("Server successfully received message from client\n");
 	exit(EXIT_SUCCESS);
 }
-
-/*static void	send_message_to_server(int server_pid, char *str)
-{
-	int	i;
-	int	j;
-
-	i = 0;
-	while (str[i])
-	{
-		j = 0;
-		while (j < 8)
-		{
-			if ((str[i] << j) & 0x80)
-				kill(server_pid, SIGUSR1);
-			else
-				kill(server_pid, SIGUSR2);
-			j++;
-		}
-		i++;
-	}
-	send_termination_to_server(server_pid);
-}*/
 
 int	main(int argc, char **argv)
 {
@@ -105,9 +110,7 @@ int	main(int argc, char **argv)
 	allow_signals_sig.sa_flags = SA_SIGINFO;
 	sigemptyset(&allow_signals_sig.sa_mask);
 	sigaction(SIGUSR1, &allow_signals_sig, NULL);
-
-	send_bit(server_pid, message);
+	send_next_bit(server_pid, message);
 	while (1)
 		pause();
-	return (0);
 }

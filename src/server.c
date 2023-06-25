@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 18:23:09 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/23 01:10:00 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/06/25 19:11:54 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,6 @@
 #include <stdlib.h>
 #include <ft_math.h>
 #include <ft_stdlib.h>
-#include <limits.h>
-
-//proteger malloc
-//relink makefile
 
 static void	append_char(char **str, char c)
 {
@@ -28,6 +24,8 @@ static void	append_char(char **str, char c)
 	if (!*str)
 	{
 		*str = malloc(2);
+		if (!*str)
+			return ;
 		(*str)[0] = '\0';
 	}
 	else
@@ -40,48 +38,62 @@ static void	append_char(char **str, char c)
 
 static void	print_message(char **str)
 {
-	ft_printf("Message received from client : %s\n", *str);
+	ft_printf("Message received from client: %s\n", *str);
 	free(*str);
 	*str = NULL;
 }
 
+static char	binary_to_char(char char_binary[8])
+{
+	int	i;
+	int	dec_char;
+
+	i = 0;
+	dec_char = 0;
+	while (i < 8)
+	{
+		if (char_binary[i] == '1')
+			dec_char += 1 * ft_pow(2, 7 - i);
+		i++;
+	}
+	return (dec_char);
+}
+
 static void	handle_binary(int sig, siginfo_t *info, void *context)
 {
-	static unsigned char	c = UCHAR_MAX;
-	static int				bits;
-	static char				*a_str;
+	static int	bits;
+	static char	*a_str;
+	static char	char_binary[8];
+	char		c;
 
 	(void) context;
 	if (sig == SIGUSR1)
-		c |= 0x80 >> bits;
+		char_binary[bits] = '1';
 	else if (sig == SIGUSR2)
-		c ^= 0x80 >> bits;
+		char_binary[bits] = '0';
 	bits++;
 	if (bits == 8)
 	{
+		c = binary_to_char(char_binary);
 		if (c == '\0')
 			print_message(&a_str);
 		else
 			append_char(&a_str, c);
+		char_binary[0] = '\0';
 		bits = 0;
-		c = UCHAR_MAX;
 	}
 	kill(info->si_pid, SIGUSR1);
 }
 
 int	main(void)
 {
-	struct sigaction	binary1_sig;
-	struct sigaction	binary0_sig;
+	struct sigaction	handle_binary_sig;
 
-	binary1_sig.sa_handler = (void *) handle_binary;
-	binary1_sig.sa_flags = SA_SIGINFO;
-	sigemptyset(&binary1_sig.sa_mask);
-	sigaction(SIGUSR1, &binary1_sig, NULL);
-	binary0_sig.sa_handler = (void *) handle_binary;
-	binary0_sig.sa_flags = SA_SIGINFO;
-	sigemptyset(&binary0_sig.sa_mask);
-	sigaction(SIGUSR2, &binary0_sig, NULL);
+	handle_binary_sig.sa_handler = (void *) handle_binary;
+	handle_binary_sig.sa_flags = SA_SIGINFO;
+	sigemptyset(&handle_binary_sig.sa_mask);
+	sigaction(SIGUSR1, &handle_binary_sig, NULL);
+	sigaction(SIGUSR2, &handle_binary_sig, NULL);
 	ft_printf("Server PID is : %d\n", getpid());
 	while (1)
 		pause();

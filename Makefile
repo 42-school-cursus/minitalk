@@ -6,7 +6,7 @@
 #    By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/06/20 17:34:18 by kjimenez          #+#    #+#              #
-#    Updated: 2023/06/22 22:12:40 by kjimenez         ###   ########.fr        #
+#    Updated: 2023/06/25 19:40:41 by kjimenez         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,7 +25,7 @@ LIBS_PATH			:= libs
 LIBFT_PATH			:= $(LIBS_PATH)/libft
 
 CC					:= clang
-CFLAGS				:= -Wall -Wextra -Werror -I$(LIBFT_PATH)/include -Iinclude -g
+CFLAGS				:= -Wall -Wextra -Werror -I$(LIBFT_PATH)/include -Iinclude
 CLIENT_LDFLAGS		:= -L$(LIBFT_PATH)/bin -lft_stdio -lft_stdlib -lft_string
 SERVER_LDFLAGS		:= -L$(LIBFT_PATH)/bin -lft_stdio -lft_math -lft_stdlib -lft_string
 
@@ -39,10 +39,14 @@ BUILD_LIBFT			:= $(shell $(MAKE) -C $(LIBFT_PATH))
 
 all: client server
 
-client: $(CLIENT_OBJ)
+client: $(CLIENT_NAME)
+
+server: $(SERVER_NAME)
+
+$(CLIENT_NAME): $(CLIENT_OBJ)
 	$(CC) $(CLIENT_OBJ) $(CLIENT_LDFLAGS) -o $(CLIENT_NAME)
 
-server: $(SERVER_OBJ)
+$(SERVER_NAME): $(SERVER_OBJ)
 	$(CC) $(SERVER_OBJ) $(SERVER_LDFLAGS) -o $(SERVER_NAME)
 
 $(DIR_OBJ)/%.o: %.c
@@ -55,7 +59,7 @@ clean:
 fclean: clean
 	$(RM) $(CLIENT_NAME) $(SERVER_NAME)
 
-re: fclean client server
+re: fclean all
 
 .PHONY: all client server clean fclean re
 
