@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 17:11:38 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/07/12 21:58:16 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/07/12 22:39:59 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,6 +105,11 @@ int	main(int argc, char **argv)
 		return (0);
 	}
 	server_pid = ft_atoi(argv[1]);
+	if (server_pid < 1)
+	{
+		ft_printf("Please provide a PID greater than 0\n");
+		return (1);
+	}
 	message = argv[2];
 	allow_signals_sig.sa_handler = (void *) send_next_bit;
 	allow_signals_sig.sa_flags = SA_SIGINFO;
