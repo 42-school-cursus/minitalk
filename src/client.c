@@ -6,7 +6,7 @@
 /*   By: kjimenez <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/17 17:11:38 by kjimenez          #+#    #+#             */
-/*   Updated: 2023/06/25 19:41:01 by kjimenez         ###   ########.fr       */
+/*   Updated: 2023/07/12 21:58:16 by kjimenez         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ char	*str_to_binary(char *str)
 	return (binary_str);
 }
 
-static int	send_next_bit(int server_pid, char *str)
+static int	send_str_next_bit(int server_pid, char *str)
 {
 	static char		*binary_str;
 	static size_t	binary_str_len;
@@ -79,13 +79,13 @@ static int	send_next_bit(int server_pid, char *str)
 	return (1);
 }
 
-static void	interrupt_sleep(int sig, siginfo_t *info, void *context)
+static void	send_next_bit(int sig, siginfo_t *info, void *context)
 {
 	int	end;
 
 	(void) sig;
 	(void) context;
-	end = send_next_bit(info->si_pid, 0);
+	end = send_str_next_bit(info->si_pid, 0);
 	if (!end)
 		return ;
 	ft_printf("Server successfully received message from client\n");
@@ -106,11 +106,11 @@ int	main(int argc, char **argv)
 	}
 	server_pid = ft_atoi(argv[1]);
 	message = argv[2];
-	allow_signals_sig.sa_handler = (void *) interrupt_sleep;
+	allow_signals_sig.sa_handler = (void *) send_next_bit;
 	allow_signals_sig.sa_flags = SA_SIGINFO;
 	sigemptyset(&allow_signals_sig.sa_mask);
 	sigaction(SIGUSR1, &allow_signals_sig, NULL);
-	send_next_bit(server_pid, message);
+	send_str_next_bit(server_pid, message);
 	while (1)
 		pause();
 }
