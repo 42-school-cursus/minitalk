@@ -20,7 +20,10 @@
 static void	append_char(char **str, char c)
 {
 	size_t	str_len;
+	char	terminated_c[2];
 
+	terminated_c[0] = c;
+	terminated_c[1] = '\0';
 	if (!*str)
 	{
 		*str = malloc(2);
@@ -33,7 +36,7 @@ static void	append_char(char **str, char c)
 		str_len = ft_strlen(*str);
 		*str = ft_realloc((void **) str, str_len + 1, str_len + 2);
 	}
-	ft_strcat(*str, &c);
+	ft_strcat(*str, terminated_c);
 }
 
 static void	print_message(char **str)
